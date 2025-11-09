@@ -28,7 +28,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 from flask import Flask, render_template, request, Response, jsonify
 import logging
-from model_data import model_data
+from model_data import model_data, additional_data
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -53,6 +53,7 @@ logger.info(f"DOMINO_API_KEY: {'***' if DOMINO_API_KEY else 'NOT SET'}")
 DEFAULT_FILE_REGEX = r"\.py$"  # only scan Python files by default
 MAX_WORKERS = int(os.environ.get("SEC_SCAN_MAX_WORKERS", "16"))
 DEFAULT_SEMGREP_CONFIG = os.environ.get("SEMGREP_CONFIG", "p/default")
+toggle_state = {"flip": False}
 
 # ─────────────────────────────── HTTP Helpers ────────────────────────────────
 class DominoApiError(RuntimeError):
@@ -694,7 +695,10 @@ def safe_domino_config():
 
 @app.route("/")
 def home():
-    return render_template("index.html", DOMINO=safe_domino_config(), MODELDATA=model_data)
+    toggle_state["flip"] = not toggle_state["flip"]
+    current_model_data = additional_data if toggle_state["flip"] else model_data
+
+    return render_template("index.html", DOMINO=safe_domino_config(), MODELDATA=current_model_data)
 
 @app.route("/original")
 def original():
